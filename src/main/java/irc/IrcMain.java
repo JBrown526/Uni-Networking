@@ -1,12 +1,16 @@
 package irc;
 
-import javax.swing.*;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class IrcMain {
+
+    // =============================================================================
+    // FIELDS
+    // =============================================================================
+
     private static String hostname;
     private static String nick;
     private static String userName;
@@ -18,7 +22,7 @@ public class IrcMain {
     private static Scanner in;
 
     // Enum containing implemented IRC commands
-    public enum Command {
+    private enum Command {
         NICK("NICK"),
         USER("USER"),
         JOIN("JOIN"),
@@ -38,6 +42,11 @@ public class IrcMain {
         }
     }
 
+    // =============================================================================
+    // MAIN
+    // =============================================================================
+
+    // TODO: Refactor into methods/class
     public static void main(String[] args) {
         Scanner console = new Scanner(System.in);
         hostname = "selsey.nsqdc.city.ac.uk";
@@ -70,6 +79,10 @@ public class IrcMain {
                     writeMessage("!rename <newname> this will rename me to whatever you choose, please be nice! :)");
                     writeMessage("!join <channel> this will make me join a channel of your choosing! Yay new friends!");
                     writeMessage("!leave <channel> this will remove me from a channel of you're choosing");
+                    // TODO: leave channel - decrement channel count, if last channel dc from server
+                    //TODO: disconnect command
+                    //TODO: channel description command?
+                    //TODO: time command (timezones?)
                 }
 
                 if (serverMessage.contains("!rename ")) {
@@ -81,14 +94,17 @@ public class IrcMain {
                 if (serverMessage.contains("!join ")) {
                     String channelSegment = serverMessage.split("!join ")[1];
                     String channel = channelSegment.split(" ")[0];
-
+                    //TODO: remove possible #
+                    channelCount++;
+                    //TODO: send command
                 }
 
+                // TODO only send in received channel
                 if (message.contains("hello there")) {
                     writeMessage("General Kenobi! You are a bold one");
                 }
 
-                if (message.contains("crusade") | message.contains("crusading")) {
+                if (message.contains("crusade") || message.contains("crusading")) {
                     writeMessage("DEUS VULT! DEUS VULT! DEUS VULT! DEUS VULT!");
                 }
 
@@ -107,6 +123,10 @@ public class IrcMain {
             e.printStackTrace();
         }
     }
+
+    // =============================================================================
+    // METHODS
+    // =============================================================================
 
     private static void writeCommand(Command command, String message) {
         String fullMessage = command.getLabel() + " " + message + "\r\n";
