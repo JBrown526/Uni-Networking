@@ -1,5 +1,6 @@
 package irc;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -14,6 +15,20 @@ public class IrcMain {
     private static PrintWriter out;
     private static Scanner in;
 
+    public enum Command {
+        NICK("NICK"), USER("USER"), JOIN("JOIN"), PING("PING"), PONG("PONG"), PRIVMSG("PRIVMSG");
+
+        public final String label;
+
+        Command(String label) {
+            this.label = label;
+        }
+
+        private String getLabel() {
+            return label;
+        }
+    }
+
     public static void main(String[] args) {
         Scanner console = new Scanner(System.in);
         nick = "RambleBot";
@@ -26,21 +41,22 @@ public class IrcMain {
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new Scanner(socket.getInputStream());
 
-            writeCommand("NICK", nick);
-            writeCommand("USER", userName + " ) * :" + realName);
-            writeCommand("JOIN", channel);
+            writeCommand(Command.NICK, nick);
+            writeCommand(Command.USER, userName + " ) * :" + realName);
+            writeCommand(Command.JOIN, channel);
 
             while (in.hasNext()) {
                 String serverMessage = in.nextLine();
+                String message = serverMessage.toLowerCase();
                 System.out.println("<<< " + serverMessage);
 
-                if (serverMessage.startsWith("PING")) {
+                if (serverMessage.startsWith(Command.PING.getLabel())) {
                     String pingContents = serverMessage.split(" ", 2)[1];
-                    writeCommand("PONG", pingContents);
+                    writeCommand(Command.PONG, pingContents);
                 }
 
-                if (serverMessage.contains("hello")) {
-                    writeMessage("PRIVMSG #ramblingbot :Oh, hi!");
+                if (message.contains("hello there")) {
+                    writeMessage("General Kenobi! You are a bold one");
                 }
             }
 
@@ -54,15 +70,15 @@ public class IrcMain {
         }
     }
 
-    private static void writeCommand(String command, String message) {
-        String fullMessage = command + " " + message + "\r\n";
+    private static void writeCommand(Command command, String message) {
+        String fullMessage = command.getLabel() + " " + message + "\r\n";
         System.out.println(">>> " + fullMessage);
         out.print(fullMessage);
         out.flush();
     }
 
     private static void writeMessage(String message) {
-        String fullMessage = message + "\r\n";
+        String fullMessage = Command.PRIVMSG.getLabel() + " " + channel + " :" + message + "\r\n";
         System.out.println(">>>" + fullMessage);
         out.print(fullMessage);
         out.flush();
