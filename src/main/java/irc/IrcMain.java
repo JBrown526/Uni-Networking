@@ -7,16 +7,25 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class IrcMain {
+    private static String hostname;
     private static String nick;
     private static String userName;
     private static String realName;
     private static String channel;
+    private static int channelCount;
 
     private static PrintWriter out;
     private static Scanner in;
 
+    // Enum containing implemented IRC commands
     public enum Command {
-        NICK("NICK"), USER("USER"), JOIN("JOIN"), PING("PING"), PONG("PONG"), PRIVMSG("PRIVMSG");
+        NICK("NICK"),
+        USER("USER"),
+        JOIN("JOIN"),
+        PART("PART"),
+        PING("PING"),
+        PONG("PONG"),
+        PRIVMSG("PRIVMSG");
 
         public final String label;
 
@@ -31,12 +40,13 @@ public class IrcMain {
 
     public static void main(String[] args) {
         Scanner console = new Scanner(System.in);
+        hostname = "selsey.nsqdc.city.ac.uk";
         nick = "RambleBot";
         userName = "RamblingBot";
         realName = "The Rambling Bot";
         channel = "#ramblingbot";
 
-        try (Socket socket = new Socket("selsey.nsqdc.city.ac.uk", 6667)) {
+        try (Socket socket = new Socket(hostname, 6667)) {
 
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new Scanner(socket.getInputStream());
@@ -55,8 +65,36 @@ public class IrcMain {
                     writeCommand(Command.PONG, pingContents);
                 }
 
+                if (serverMessage.contains("!help")) {
+                    writeMessage("Here's a list of my commands:");
+                    writeMessage("!rename <newname> this will rename me to whatever you choose, please be nice! :)");
+                    writeMessage("!join <channel> this will make me join a channel of your choosing! Yay new friends!");
+                    writeMessage("!leave <channel> this will remove me from a channel of you're choosing");
+                }
+
+                if (serverMessage.contains("!rename ")) {
+                    String nameSegment = serverMessage.split("!rename ", 2)[1];
+                    nick = nameSegment.split(" ")[0];
+                    writeCommand(Command.NICK, nick);
+                }
+
+                if (serverMessage.contains("!join ")) {
+                    String channelSegment = serverMessage.split("!join ")[1];
+                    String channel = channelSegment.split(" ")[0];
+
+                }
+
                 if (message.contains("hello there")) {
                     writeMessage("General Kenobi! You are a bold one");
+                }
+
+                if (message.contains("crusade") | message.contains("crusading")) {
+                    writeMessage("DEUS VULT! DEUS VULT! DEUS VULT! DEUS VULT!");
+                }
+
+                if (message.contains("begone bot")) {
+                    writeMessage("You don't have to be so mean about it. Goodbye :(");
+                    break;
                 }
             }
 
