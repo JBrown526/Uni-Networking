@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class IrcMain {
+    //TODO: COMMENTS
 
     // =============================================================================
     // FIELDS
