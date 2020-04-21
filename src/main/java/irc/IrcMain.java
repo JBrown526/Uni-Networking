@@ -49,7 +49,7 @@ public class IrcMain {
 
     // TODO: Refactor into methods/class
     public static void main(String[] args) {
-        Scanner console = new Scanner(System.in);
+//        Scanner console = new Scanner(System.in);
         hostname = "selsey.nsqdc.city.ac.uk";
         nick = "RambleBot";
         userName = "RamblingBot";
@@ -63,6 +63,8 @@ public class IrcMain {
 
             writeCommand(Command.NICK, nick);
             writeCommand(Command.USER, userName + " ) * :" + realName);
+
+            //TODO: split into separate method
             writeCommand(Command.JOIN, channel);
 
             while (in.hasNext()) {
