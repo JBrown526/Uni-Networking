@@ -12,10 +12,12 @@ public class IrcMain {
     // FIELDS
     // =============================================================================
 
-    private static String hostname;
+    private static final String hostname = "selsey.nsqdc.city.ac.uk";
+    private static final String userName = "RamblingBot";
+    private static final String realName = "The Rambling Bot";
+    private static final String password = "SuperSecretPassword";
+
     private static String nick;
-    private static String userName;
-    private static String realName;
     private static String channel;
     private static int channelCount;
 
@@ -28,6 +30,7 @@ public class IrcMain {
         USER("USER"),
         JOIN("JOIN"),
         PART("PART"),
+        QUIT("QUIT"),
         PING("PING"),
         PONG("PONG"),
         PRIVMSG("PRIVMSG");
@@ -49,11 +52,7 @@ public class IrcMain {
 
     // TODO: Refactor into methods/class
     public static void main(String[] args) {
-//        Scanner console = new Scanner(System.in);
-        hostname = "selsey.nsqdc.city.ac.uk";
         nick = "RambleBot";
-        userName = "RamblingBot";
-        realName = "The Rambling Bot";
         channel = "ramblingbot";
         channelCount = 0;
 
@@ -64,9 +63,6 @@ public class IrcMain {
 
             writeCommand(Command.NICK, nick);
             writeCommand(Command.USER, String.format("%s ) * :%s", userName, realName));
-
-            //TODO: split into separate method
-            writeCommand(Command.JOIN, channel);
             joinChannel(channel);
 
             while (in.hasNext()) {
@@ -79,13 +75,17 @@ public class IrcMain {
                     writeCommand(Command.PONG, pingContents);
                 }
 
+                // =============================================================================
+                // COMMANDS
+                // =============================================================================
+
                 if (serverMessage.contains("!help")) {
                     writeMessage("Here's a list of my commands:");
-                    writeMessage("!rename <newname> this will rename me to whatever you choose, please be nice! :)");
-                    writeMessage("!join <channel> this will make me join a channel of your choosing! Yay new friends!");
-                    writeMessage("!leave <channel> this will remove me from a channel of you're choosing");
+                    writeMessage("!rename <newname> - this will rename me to whatever you choose, please be nice!");
+                    writeMessage("!join <channel> - this will make me join a channel of your choosing! Yay new friends!");
+                    writeMessage("!leave <channel> - this will remove me from a channel of you're choosing");
+                    writeMessage("!quit - this will kick me from the server");
                     // TODO: leave channel - decrement channel count, if last channel dc from server
-                    //TODO: disconnect command
                     //TODO: channel description command?
                     //TODO: time command (timezones?)
                 }
@@ -107,21 +107,37 @@ public class IrcMain {
                     String channelSegment = serverMessage.split("!leave ")[1];
                     String channelName = channelSegment.split(" ")[0];
                     String channel = channelName.replace("#", "");
-                    leaveChannel(channel);
+
+                    // quits the server if the bot is not in any channels
+                    if (channelCount > 0) {
+                        leaveChannel(channel);
+                    } else {
+                        writeCommand(Command.QUIT, "");
+                    }
                 }
 
-                // TODO only send in received channel
+                if (serverMessage.contains("!quit")) {
+                    writeCommand(Command.QUIT, "");
+                }
+
+                // =============================================================================
+                // EASTER EGGS
+                // =============================================================================
+
                 if (message.contains("hello there")) {
+                    getChannel(serverMessage);
                     writeMessage("General Kenobi! You are a bold one");
                 }
 
-                if (message.contains("crusade") || message.contains("crusading")) {
+                while (message.contains("crusade") || message.contains("crusading")) {
+                    getChannel(serverMessage);
                     writeMessage("DEUS VULT! DEUS VULT! DEUS VULT! DEUS VULT!");
                 }
 
                 if (message.contains("begone bot")) {
+                    getChannel(serverMessage);
                     writeMessage("You don't have to be so mean about it. Goodbye :(");
-                    break;
+                    writeCommand(Command.QUIT, "");
                 }
             }
 
@@ -139,6 +155,11 @@ public class IrcMain {
     // METHODS
     // =============================================================================
 
+    private static void getChannel(String serverMessage) {
+        String channelSegment = serverMessage.split("#")[1];
+        channel = channelSegment.split(" ")[0];
+    }
+
     private static void writeCommand(Command command, String message) {
         String fullMessage = String.format("%s %s\r%n", command.getLabel(), message);
         System.out.printf(">>> %s%n", fullMessage);
@@ -147,7 +168,7 @@ public class IrcMain {
     }
 
     private static void writeMessage(String message) {
-        String fullMessage = String.format("%s %s :%s\r%n", Command.PRIVMSG.getLabel(), channel, message);
+        String fullMessage = String.format("%s #%s :%s\r%n", Command.PRIVMSG.getLabel(), channel, message);
         System.out.printf(">>>%s%n", fullMessage);
         out.print(fullMessage);
         out.flush();
