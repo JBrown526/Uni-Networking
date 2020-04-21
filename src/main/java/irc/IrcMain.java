@@ -54,7 +54,8 @@ public class IrcMain {
         nick = "RambleBot";
         userName = "RamblingBot";
         realName = "The Rambling Bot";
-        channel = "#ramblingbot";
+        channel = "ramblingbot";
+        channelCount = 0;
 
         try (Socket socket = new Socket(hostname, 6667)) {
 
@@ -62,15 +63,16 @@ public class IrcMain {
             in = new Scanner(socket.getInputStream());
 
             writeCommand(Command.NICK, nick);
-            writeCommand(Command.USER, userName + " ) * :" + realName);
+            writeCommand(Command.USER, String.format("%s ) * :%s", userName, realName));
 
             //TODO: split into separate method
             writeCommand(Command.JOIN, channel);
+            joinChannel(channel);
 
             while (in.hasNext()) {
                 String serverMessage = in.nextLine();
                 String message = serverMessage.toLowerCase();
-                System.out.println("<<< " + serverMessage);
+                System.out.printf("<<< %s%n", serverMessage);
 
                 if (serverMessage.startsWith(Command.PING.getLabel())) {
                     String pingContents = serverMessage.split(" ", 2)[1];
@@ -96,10 +98,16 @@ public class IrcMain {
 
                 if (serverMessage.contains("!join ")) {
                     String channelSegment = serverMessage.split("!join ")[1];
-                    String channel = channelSegment.split(" ")[0];
-                    //TODO: remove possible #
-                    channelCount++;
-                    //TODO: send command
+                    String channelName = channelSegment.split(" ")[0];
+                    String channel = channelName.replace("#", "");
+                    joinChannel(channel);
+                }
+
+                if (serverMessage.contains("!leave ")) {
+                    String channelSegment = serverMessage.split("!leave ")[1];
+                    String channelName = channelSegment.split(" ")[0];
+                    String channel = channelName.replace("#", "");
+                    leaveChannel(channel);
                 }
 
                 // TODO only send in received channel
@@ -132,16 +140,28 @@ public class IrcMain {
     // =============================================================================
 
     private static void writeCommand(Command command, String message) {
-        String fullMessage = command.getLabel() + " " + message + "\r\n";
-        System.out.println(">>> " + fullMessage);
+        String fullMessage = String.format("%s %s\r%n", command.getLabel(), message);
+        System.out.printf(">>> %s%n", fullMessage);
         out.print(fullMessage);
         out.flush();
     }
 
     private static void writeMessage(String message) {
-        String fullMessage = Command.PRIVMSG.getLabel() + " " + channel + " :" + message + "\r\n";
-        System.out.println(">>>" + fullMessage);
+        String fullMessage = String.format("%s %s :%s\r%n", Command.PRIVMSG.getLabel(), channel, message);
+        System.out.printf(">>>%s%n", fullMessage);
         out.print(fullMessage);
         out.flush();
+    }
+
+    private static void joinChannel(String channel) {
+        String channelSignature = String.format("#%s", channel);
+        writeCommand(Command.JOIN, channelSignature);
+        channelCount++;
+    }
+
+    private static void leaveChannel(String channel) {
+        String channelSignature = String.format("#%s", channel);
+        writeCommand(Command.PART, channelSignature);
+        channelCount--;
     }
 }
