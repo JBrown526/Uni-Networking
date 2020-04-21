@@ -12,17 +12,14 @@ public class IrcMain {
     // FIELDS
     // =============================================================================
 
-    private static final String hostname = "selsey.nsqdc.city.ac.uk";
-    private static final String userName = "RamblingBot";
-    private static final String realName = "The Rambling Bot";
-    private static final String password = "SuperSecretPassword";
+    private static final String HOSTNAME = "selsey.nsqdc.city.ac.uk";
+    private static final String USER_NAME = "RamblingBot";
+    private static final String REAL_NAME = "The Rambling Bot";
 
-    private static String nick;
     private static String channel;
     private static int channelCount;
 
     private static PrintWriter out;
-    private static Scanner in;
 
     // Enum containing implemented IRC commands
     private enum Command {
@@ -52,17 +49,17 @@ public class IrcMain {
 
     // TODO: Refactor into methods/class
     public static void main(String[] args) {
-        nick = "RambleBot";
+        String nick = "RambleBot";
         channel = "ramblingbot";
         channelCount = 0;
 
-        try (Socket socket = new Socket(hostname, 6667)) {
+        try (Socket socket = new Socket(HOSTNAME, 6667)) {
 
             out = new PrintWriter(socket.getOutputStream(), true);
-            in = new Scanner(socket.getInputStream());
+            Scanner in = new Scanner(socket.getInputStream());
 
             writeCommand(Command.NICK, nick);
-            writeCommand(Command.USER, String.format("%s ) * :%s", userName, realName));
+            writeCommand(Command.USER, String.format("%s ) * :%s", USER_NAME, REAL_NAME));
             joinChannel(channel);
 
             while (in.hasNext()) {
