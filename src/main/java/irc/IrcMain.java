@@ -80,6 +80,7 @@ public class IrcMain {
                 // =============================================================================
 
                 if (serverMessage.contains("!help")) {
+                    getChannel(serverMessage);
                     writeMessage("Here's a list of my commands:");
                     writeMessage("!rename <newname> - this will rename me to whatever you choose, please be nice!");
                     writeMessage("!join <channel> - this will make me join a channel of your choosing! Yay new friends!");
