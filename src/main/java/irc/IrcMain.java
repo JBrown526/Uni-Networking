@@ -12,16 +12,18 @@ public class IrcMain {
     // FIELDS
     // =============================================================================
 
+    // TODO: set these at runtime through commandline inputs
     private static final String HOSTNAME = "selsey.nsqdc.city.ac.uk";
     private static final String USER_NAME = "RamblingBot";
     private static final String REAL_NAME = "The Rambling Bot";
 
-    private static String channel;
+    // TODO: array of channels currently in, replace channelCount?
+    private static String currentChannel;
     private static int channelCount;
 
     private static PrintWriter out;
 
-    // Enum containing implemented IRC commands
+    // enum containing implemented IRC commands
     private enum Command {
         NICK("NICK"),
         USER("USER"),
@@ -30,7 +32,8 @@ public class IrcMain {
         QUIT("QUIT"),
         PING("PING"),
         PONG("PONG"),
-        PRIVMSG("PRIVMSG");
+        PRIVMSG("PRIVMSG"),
+        TOPIC("TOPIC");
 
         public final String label;
 
@@ -50,23 +53,28 @@ public class IrcMain {
     // TODO: Refactor into methods/class
     public static void main(String[] args) {
         String nick = "RambleBot";
-        channel = "ramblingbot";
+        currentChannel = "ramblingbot";
         channelCount = 0;
 
+        // opens a connection to the IRC server given in HOSTNAME
         try (Socket socket = new Socket(HOSTNAME, 6667)) {
 
+            // gets the input and output streams of the socket
             out = new PrintWriter(socket.getOutputStream(), true);
             Scanner in = new Scanner(socket.getInputStream());
 
+            // provides credentials for the IRC server and joins the default channel
             writeCommand(Command.NICK, nick);
             writeCommand(Command.USER, String.format("%s ) * :%s", USER_NAME, REAL_NAME));
-            joinChannel(channel);
+            joinChannel(currentChannel);
 
+            // loops through the responses received from the input stream
             while (in.hasNext()) {
+                // stores the message from the server and prints it to the console
                 String serverMessage = in.nextLine();
-                String message = serverMessage.toLowerCase();
                 System.out.printf("<<< %s%n", serverMessage);
 
+                // responds to any pings sent out by the server
                 if (serverMessage.startsWith(Command.PING.getLabel())) {
                     String pingContents = serverMessage.split(" ", 2)[1];
                     writeCommand(Command.PONG, pingContents);
@@ -76,33 +84,44 @@ public class IrcMain {
                 // COMMANDS
                 // =============================================================================
 
+                // lists all the available commands
                 if (serverMessage.contains("!help")) {
                     getChannel(serverMessage);
                     writeMessage("Here's a list of my commands:");
-                    writeMessage("!rename <newname> - this will rename me to whatever you choose, please be nice!");
                     writeMessage("!join <channel> - this will make me join a channel of your choosing! Yay new friends!");
-                    writeMessage("!leave <channel> - this will remove me from a channel of you're choosing");
+                    writeMessage("!leave <channel> - this will remove me from a channel of your choosing");
+                    writeMessage("!rename <newname> - this will rename me to whatever you choose, please be nice!");
+                    writeMessage("!settopic <topic> - this will change the channel's topic to your input");
                     writeMessage("!quit - this will kick me from the server");
-                    // TODO: leave channel - decrement channel count, if last channel dc from server
                     //TODO: channel description command?
                     //TODO: time command (timezones?)
                 }
 
+                // changes the bots nickname to the provided field
                 if (serverMessage.contains("!rename ")) {
+                    // extracts the new nickname from the server message
                     String nameSegment = serverMessage.split("!rename ", 2)[1];
                     nick = nameSegment.split(" ")[0];
                     writeCommand(Command.NICK, nick);
                 }
 
+                // tells the bot to join the given channel
+                // TODO: check for double join (use channel array)
                 if (serverMessage.contains("!join ")) {
-                    String channelSegment = serverMessage.split("!join ")[1];
-                    String channelName = channelSegment.split(" ")[0];
-                    String channel = channelName.replace("#", "");
-                    joinChannel(channel);
+                    // extracts the channel to join from the server message
+                    String channelSegment = serverMessage.split("!join ", 2)[1];
+                    String channelFullName = channelSegment.split(" ")[0];
+                    String channelName = channelFullName.replace("#", "");
+                    currentChannel = channelName;
+
+                    joinChannel(channelName);
+                    writeMessage(String.format("Hi! I'm %s, but you can call me %s. If you want to learn more about what I can do type \"!help\". Let's get along!", REAL_NAME, nick));
                 }
 
+                // tells the bot to leave the given channel
                 if (serverMessage.contains("!leave ")) {
-                    String channelSegment = serverMessage.split("!leave ")[1];
+                    // extracts the channel to leave from the server message
+                    String channelSegment = serverMessage.split("!leave ", 2)[1];
                     String channelName = channelSegment.split(" ")[0];
                     String channel = channelName.replace("#", "");
 
@@ -110,33 +129,16 @@ public class IrcMain {
                     if (channelCount > 0) {
                         leaveChannel(channel);
                     } else {
-                        writeCommand(Command.QUIT, "");
+                        quitServer();
                     }
                 }
 
+                // tells the bot to disconnect from the server
                 if (serverMessage.contains("!quit")) {
-                    writeCommand(Command.QUIT, "");
+                    quitServer();
                 }
 
-                // =============================================================================
-                // EASTER EGGS
-                // =============================================================================
-
-                if (message.contains("hello there")) {
-                    getChannel(serverMessage);
-                    writeMessage("General Kenobi! You are a bold one");
-                }
-
-                while (message.contains("crusade") || message.contains("crusading")) {
-                    getChannel(serverMessage);
-                    writeMessage("DEUS VULT! DEUS VULT! DEUS VULT! DEUS VULT!");
-                }
-
-                if (message.contains("begone bot")) {
-                    getChannel(serverMessage);
-                    writeMessage("You don't have to be so mean about it. Goodbye :(");
-                    writeCommand(Command.QUIT, "");
-                }
+                easterEggCheck(serverMessage);
             }
 
             in.close();
@@ -153,11 +155,13 @@ public class IrcMain {
     // METHODS
     // =============================================================================
 
+    // extracts the channel a message was sent from
     private static void getChannel(String serverMessage) {
         String channelSegment = serverMessage.split("#")[1];
-        channel = channelSegment.split(" ")[0];
+        currentChannel = channelSegment.split(" ")[0];
     }
 
+    // sends a command to the server
     private static void writeCommand(Command command, String message) {
         String fullMessage = String.format("%s %s\r%n", command.getLabel(), message);
         System.out.printf(">>> %s%n", fullMessage);
@@ -165,22 +169,54 @@ public class IrcMain {
         out.flush();
     }
 
+    // sends a message to the server on the current channel
     private static void writeMessage(String message) {
-        String fullMessage = String.format("%s #%s :%s\r%n", Command.PRIVMSG.getLabel(), channel, message);
-        System.out.printf(">>>%s%n", fullMessage);
+        String fullMessage = String.format("%s #%s :%s\r%n", Command.PRIVMSG.getLabel(), currentChannel, message);
+        System.out.printf(">>> %s%n", fullMessage);
         out.print(fullMessage);
         out.flush();
     }
 
+    // joins the given channel
     private static void joinChannel(String channel) {
         String channelSignature = String.format("#%s", channel);
         writeCommand(Command.JOIN, channelSignature);
         channelCount++;
     }
 
+    // leaves the given channel
     private static void leaveChannel(String channel) {
         String channelSignature = String.format("#%s", channel);
         writeCommand(Command.PART, channelSignature);
         channelCount--;
+    }
+
+    // disconnects from the server
+    private static void quitServer() {
+        writeCommand(Command.QUIT, "");
+    }
+
+    // =============================================================================
+    // EASTER EGGS
+    // =============================================================================
+
+    private static void easterEggCheck(String serverMessage) {
+        String message = serverMessage.toLowerCase();
+
+        if (message.contains("hello there")) {
+            getChannel(serverMessage);
+            writeMessage("General Kenobi! You are a bold one");
+        }
+
+        while (message.contains("crusade") || message.contains("crusading")) {
+            getChannel(serverMessage);
+            writeMessage("DEUS VULT! DEUS VULT! DEUS VULT! DEUS VULT!");
+        }
+
+        if (message.contains("begone bot")) {
+            getChannel(serverMessage);
+            writeMessage("You don't have to be so mean about it. Goodbye :(");
+            quitServer();
+        }
     }
 }
