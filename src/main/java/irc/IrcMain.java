@@ -110,16 +110,23 @@ public class IrcMain {
                 }
 
                 // tells the bot to leave the given channel
-                if (serverMessage.contains("!leave ")) {
-                    // extracts the channel to leave from the server message
-                    String channelSegment = serverMessage.split("!leave ", 2)[1];
-                    String channelName = channelSegment.split(" ")[0];
-                    String channel = channelName.replace("#", "");
+                if (serverMessage.contains("!leave")) {
+                    // defaults to leaving the current channel
+                    getChannel(serverMessage);
+                    String channel = currentChannel;
+
+                    // checks if an input channel has been given
+                    if (serverMessage.contains("!leave ")) {
+                        // extracts the channel to leave from the server message
+                        String channelSegment = serverMessage.split("!leave ", 2)[1];
+                        String channelName = channelSegment.split(" ")[0];
+                        channel = channelName.replace("#", "");
+                    }
+
+                    leaveChannel(channel);
 
                     // quits the server if the bot is not in any channels
-                    if (channels.size() > 1) {
-                        leaveChannel(channel);
-                    } else {
+                    if (channels.isEmpty()) {
                         quitServer();
                     }
                 }
@@ -152,7 +159,7 @@ public class IrcMain {
     }
 
     // =============================================================================
-    // METHODS
+    // UTILITY METHODS
     // =============================================================================
 
     // extracts the channel a message was sent from
@@ -177,9 +184,14 @@ public class IrcMain {
         out.flush();
     }
 
+    // =============================================================================
+    // COMMAND METHODS
+    // =============================================================================
+
     // joins the given channel
     private static void joinChannel(String channel) {
         String channelSignature = String.format("#%s", channel);
+
         // checks if the channel has already been joined
         if (channels.contains(channelSignature)) {
             writeMessage(String.format("I'm already in %s!", channelSignature));
@@ -194,8 +206,13 @@ public class IrcMain {
     // leaves the given channel
     private static void leaveChannel(String channel) {
         String channelSignature = String.format("#%s", channel);
-        writeCommand(Command.PART, channelSignature);
-        channels.remove(channelSignature);
+
+        if (channels.contains(channelSignature)) {
+            writeCommand(Command.PART, channelSignature);
+            channels.remove(channelSignature);
+        } else {
+            writeMessage(String.format("I am not in %s", channelSignature));
+        }
     }
 
     // disconnects from the server
