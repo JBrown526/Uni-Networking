@@ -81,69 +81,12 @@ public class IrcMain {
                     writeCommand(Command.PONG, pingContents);
                 }
 
-                // =============================================================================
-                // COMMANDS
-                // =============================================================================
-
-                // lists all the available commands
-                if (serverMessage.contains("!help")) {
-                    getChannel(serverMessage);
-                    writeMessage("Here's a list of my commands:");
-                    writeMessage("!join <channel> - this will make me join a channel of your choosing! Yay new friends!");
-                    writeMessage("!leave <channel> - this will remove me from a channel of your choosing, if no channel is given it will remove me from the current channel");
-                    writeMessage("!rename <newname> - this will rename me to whatever you choose, please be nice!");
-                    writeMessage("!settopic <topic> - this will change the channel's topic to your input");
-                    writeMessage("!quit - this will kick me from the server");
-                    //TODO: channel description command?
-                    //TODO: time command (timezones?)
-                }
-
-                // tells the bot to join the given channel
-                if (serverMessage.contains("!join ")) {
-                    // extracts the channel to join from the server message
-                    String channelSegment = serverMessage.split("!join ", 2)[1];
-                    String channelFullName = channelSegment.split(" ")[0];
-                    String channelName = channelFullName.replace("#", "");
-
-                    getChannel(serverMessage);
-                    joinChannel(channelName);
-                }
-
-                // tells the bot to leave the given channel
-                if (serverMessage.contains("!leave")) {
-                    // defaults to leaving the current channel
-                    getChannel(serverMessage);
-                    String channel = currentChannel;
-
-                    // checks if an input channel has been given
-                    if (serverMessage.contains("!leave ")) {
-                        // extracts the channel to leave from the server message
-                        String channelSegment = serverMessage.split("!leave ", 2)[1];
-                        String channelName = channelSegment.split(" ")[0];
-                        channel = channelName.replace("#", "");
-                    }
-
-                    leaveChannel(channel);
-
-                    // quits the server if the bot is not in any channels
-                    if (channels.isEmpty()) {
-                        quitServer();
-                    }
-                }
-
-                // changes the bots nickname to the provided field
-                if (serverMessage.contains("!rename ")) {
-                    // extracts the new nickname from the server message
-                    String nameSegment = serverMessage.split("!rename ", 2)[1];
-                    nick = nameSegment.split(" ")[0];
-
-                    writeCommand(Command.NICK, nick);
-                }
-
-                // tells the bot to disconnect from the server
-                if (serverMessage.contains("!quit")) {
-                    quitServer();
-                }
+                // checks if a given command has been sent by the server
+                helpCommand(serverMessage);
+                joinCommand(serverMessage);
+                leaveCommand(serverMessage);
+                renameCommand(serverMessage);
+                quitCommand(serverMessage);
 
                 easterEggs(serverMessage);
             }
@@ -188,6 +131,34 @@ public class IrcMain {
     // COMMAND METHODS
     // =============================================================================
 
+    // lists all the available commands
+    private static void helpCommand(String serverMessage) {
+        if (serverMessage.contains("!help")) {
+            getChannel(serverMessage);
+            writeMessage("Here's a list of my commands:");
+            writeMessage("!join <channel> - this will make me join a channel of your choosing! Yay new friends!");
+            writeMessage("!leave <channel> - this will remove me from a channel of your choosing, if no channel is given it will remove me from the current channel");
+            writeMessage("!rename <newname> - this will rename me to whatever you choose, please be nice!");
+            writeMessage("!settopic <topic> - this will change the channel's topic to your input");
+            writeMessage("!quit - this will kick me from the server");
+            //TODO: channel description command?
+            //TODO: time command (timezones?)
+        }
+    }
+
+    // tells the bot to join the given channel
+    private static void joinCommand(String serverMessage) {
+        if (serverMessage.contains("!join ")) {
+            // extracts the channel to join from the server message
+            String channelSegment = serverMessage.split("!join ", 2)[1];
+            String channelFullName = channelSegment.split(" ")[0];
+            String channelName = channelFullName.replace("#", "");
+
+            getChannel(serverMessage);
+            joinChannel(channelName);
+        }
+    }
+
     // joins the given channel
     private static void joinChannel(String channel) {
         String channelSignature = String.format("#%s", channel);
@@ -203,6 +174,30 @@ public class IrcMain {
         }
     }
 
+    // tells the bot to leave the given channel
+    private static void leaveCommand(String serverMessage) {
+        if (serverMessage.contains("!leave")) {
+            // defaults to leaving the current channel
+            getChannel(serverMessage);
+            String channel = currentChannel;
+
+            // checks if an input channel has been given
+            if (serverMessage.contains("!leave ")) {
+                // extracts the channel to leave from the server message
+                String channelSegment = serverMessage.split("!leave ", 2)[1];
+                String channelName = channelSegment.split(" ")[0];
+                channel = channelName.replace("#", "");
+            }
+
+            leaveChannel(channel);
+
+            // quits the server if the bot is not in any channels
+            if (channels.isEmpty()) {
+                quitServer();
+            }
+        }
+    }
+
     // leaves the given channel
     private static void leaveChannel(String channel) {
         String channelSignature = String.format("#%s", channel);
@@ -212,6 +207,24 @@ public class IrcMain {
             channels.remove(channelSignature);
         } else {
             writeMessage(String.format("I am not in %s", channelSignature));
+        }
+    }
+
+    // changes the bots nickname to the provided field
+    private static void renameCommand(String serverMessage) {
+        if (serverMessage.contains("!rename ")) {
+            // extracts the new nickname from the server message
+            String nameSegment = serverMessage.split("!rename ", 2)[1];
+            nick = nameSegment.split(" ")[0];
+
+            writeCommand(Command.NICK, nick);
+        }
+    }
+
+    // tells the bot to disconnect from the server
+    private static void quitCommand(String serverMessage) {
+        if (serverMessage.contains("!quit")) {
+            quitServer();
         }
     }
 
