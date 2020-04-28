@@ -3,6 +3,7 @@ package irc;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class IrcMain {
@@ -17,9 +18,8 @@ public class IrcMain {
     private static final String USER_NAME = "RamblingBot";
     private static final String REAL_NAME = "The Rambling Bot";
 
-    // TODO: array of channels currently in, replace channelCount?
+    private static ArrayList<String> channels;
     private static String currentChannel;
-    private static int channelCount;
 
     private static PrintWriter out;
 
@@ -54,7 +54,7 @@ public class IrcMain {
     public static void main(String[] args) {
         String nick = "RambleBot";
         currentChannel = "ramblingbot";
-        channelCount = 0;
+        channels = new ArrayList<>();
 
         // opens a connection to the IRC server given in HOSTNAME
         try (Socket socket = new Socket(HOSTNAME, 6667)) {
@@ -89,7 +89,7 @@ public class IrcMain {
                     getChannel(serverMessage);
                     writeMessage("Here's a list of my commands:");
                     writeMessage("!join <channel> - this will make me join a channel of your choosing! Yay new friends!");
-                    writeMessage("!leave <channel> - this will remove me from a channel of your choosing");
+                    writeMessage("!leave <channel> - this will remove me from a channel of your choosing, if no channel is given it will remove me from the current channel");
                     writeMessage("!rename <newname> - this will rename me to whatever you choose, please be nice!");
                     writeMessage("!settopic <topic> - this will change the channel's topic to your input");
                     writeMessage("!quit - this will kick me from the server");
@@ -126,7 +126,7 @@ public class IrcMain {
                     String channel = channelName.replace("#", "");
 
                     // quits the server if the bot is not in any channels
-                    if (channelCount > 0) {
+                    if (!channels.isEmpty()) {
                         leaveChannel(channel);
                     } else {
                         quitServer();
@@ -181,14 +181,14 @@ public class IrcMain {
     private static void joinChannel(String channel) {
         String channelSignature = String.format("#%s", channel);
         writeCommand(Command.JOIN, channelSignature);
-        channelCount++;
+        channels.add(channelSignature);
     }
 
     // leaves the given channel
     private static void leaveChannel(String channel) {
         String channelSignature = String.format("#%s", channel);
         writeCommand(Command.PART, channelSignature);
-        channelCount--;
+        channels.remove(channelSignature);
     }
 
     // disconnects from the server
