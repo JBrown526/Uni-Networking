@@ -17,6 +17,7 @@ public class IrcMain {
     private static final String HOSTNAME = "selsey.nsqdc.city.ac.uk";
     private static final String USER_NAME = "RamblingBot";
     private static final String REAL_NAME = "The Rambling Bot";
+    private static String nick;
 
     private static ArrayList<String> channels;
     private static String currentChannel;
@@ -52,7 +53,7 @@ public class IrcMain {
 
     // TODO: Refactor into methods/class
     public static void main(String[] args) {
-        String nick = "RambleBot";
+        nick = "RambleBot";
         currentChannel = "ramblingbot";
         channels = new ArrayList<>();
 
@@ -112,10 +113,9 @@ public class IrcMain {
                     String channelSegment = serverMessage.split("!join ", 2)[1];
                     String channelFullName = channelSegment.split(" ")[0];
                     String channelName = channelFullName.replace("#", "");
-                    currentChannel = channelName;
 
+                    getChannel(serverMessage);
                     joinChannel(channelName);
-                    writeMessage(String.format("Hi! I'm %s, but you can call me %s. If you want to learn more about what I can do type \"!help\". Let's get along!", REAL_NAME, nick));
                 }
 
                 // tells the bot to leave the given channel
@@ -126,7 +126,7 @@ public class IrcMain {
                     String channel = channelName.replace("#", "");
 
                     // quits the server if the bot is not in any channels
-                    if (!channels.isEmpty()) {
+                    if (channels.size() > 1) {
                         leaveChannel(channel);
                     } else {
                         quitServer();
@@ -180,8 +180,15 @@ public class IrcMain {
     // joins the given channel
     private static void joinChannel(String channel) {
         String channelSignature = String.format("#%s", channel);
-        writeCommand(Command.JOIN, channelSignature);
-        channels.add(channelSignature);
+        // checks if the channel has already been joined
+        if (channels.contains(channelSignature)) {
+            writeMessage(String.format("I'm already in %s!", channelSignature));
+        } else {
+            currentChannel = channel;
+            writeCommand(Command.JOIN, channelSignature);
+            channels.add(channelSignature);
+            writeMessage(String.format("Hi! I'm %s, but you can call me %s. If you want to learn more about what I can do type \"!help\". Let's get along!", REAL_NAME, nick));
+        }
     }
 
     // leaves the given channel
