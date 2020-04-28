@@ -86,6 +86,7 @@ public class IrcMain {
                 joinCommand(serverMessage);
                 leaveCommand(serverMessage);
                 renameCommand(serverMessage);
+                setTopicCommand(serverMessage);
                 quitCommand(serverMessage);
 
                 easterEggs(serverMessage);
@@ -125,8 +126,8 @@ public class IrcMain {
     }
 
     // sends a message to the server on the current channel
-    private static void writeMessage(String message) {
-        String fullMessage = String.format("%s #%s :%s\r%n", Command.PRIVMSG.getLabel(), currentChannel, message);
+    private static void writeTextCommand(Command command, String message) {
+        String fullMessage = String.format("%s #%s :%s\r%n", command.getLabel(), currentChannel, message);
         System.out.printf(">>> %s%n", fullMessage);
         out.print(fullMessage);
         out.flush();
@@ -140,12 +141,12 @@ public class IrcMain {
     private static void helpCommand(String serverMessage) {
         if (serverMessage.contains("!help")) {
             getChannel(serverMessage);
-            writeMessage("Here's a list of my commands:");
-            writeMessage("!join <channel> - this will make me join a channel of your choosing! Yay new friends!");
-            writeMessage("!leave <channel> - this will remove me from a channel of your choosing, if no channel is given it will remove me from the current channel");
-            writeMessage("!rename <newname> - this will rename me to whatever you choose, please be nice!");
-            writeMessage("!settopic <topic> - this will change the channel's topic to your input");
-            writeMessage("!quit - this will kick me from the server");
+            writeTextCommand(Command.PRIVMSG, "Here's a list of my commands:");
+            writeTextCommand(Command.PRIVMSG, "!join <channel> - this will make me join a channel of your choosing! Yay new friends!");
+            writeTextCommand(Command.PRIVMSG, "!leave <channel> - this will remove me from a channel of your choosing, if no channel is given it will remove me from the current channel");
+            writeTextCommand(Command.PRIVMSG, "!rename <newname> - this will rename me to whatever you choose, please be nice!");
+            writeTextCommand(Command.PRIVMSG, "!settopic <topic> - this will change the channel's topic to your input");
+            writeTextCommand(Command.PRIVMSG, "!quit - this will kick me from the server");
             //TODO: channel description command?
             //TODO: time command (timezones?)
         }
@@ -170,12 +171,12 @@ public class IrcMain {
 
         // checks if the channel has already been joined
         if (channels.contains(channelSignature)) {
-            writeMessage(String.format("I'm already in %s!", channelSignature));
+            writeTextCommand(Command.PRIVMSG, String.format("I'm already in %s!", channelSignature));
         } else {
             currentChannel = channel;
             writeCommand(Command.JOIN, channelSignature);
             channels.add(channelSignature);
-            writeMessage(String.format("Hi! I'm %s, but you can call me %s. If you want to learn more about what I can do type \"!help\". Let's get along!", REAL_NAME, nick));
+            writeTextCommand(Command.PRIVMSG, String.format("Hi! I'm %s, but you can call me %s. If you want to learn more about what I can do type \"!help\". Let's get along!", REAL_NAME, nick));
         }
     }
 
@@ -211,7 +212,7 @@ public class IrcMain {
             writeCommand(Command.PART, channelSignature);
             channels.remove(channelSignature);
         } else {
-            writeMessage(String.format("I am not in %s", channelSignature));
+            writeTextCommand(Command.PRIVMSG, String.format("I am not in %s", channelSignature));
         }
     }
 
@@ -223,6 +224,15 @@ public class IrcMain {
             nick = nameSegment.split(" ")[0];
 
             writeCommand(Command.NICK, nick);
+        }
+    }
+
+    private static void setTopicCommand(String serverMessage) {
+        if (serverMessage.contains("!settopic ")) {
+            getChannel(serverMessage);
+            String topicSegment = serverMessage.split("!settopic ", 2)[1];
+
+            writeTextCommand(Command.TOPIC, topicSegment);
         }
     }
 
@@ -247,17 +257,17 @@ public class IrcMain {
 
         if (message.contains("hello there")) {
             getChannel(serverMessage);
-            writeMessage("General Kenobi! You are a bold one");
+            writeTextCommand(Command.PRIVMSG, "General Kenobi! You are a bold one");
         }
 
         while (message.contains("crusade") || message.contains("crusading")) {
             getChannel(serverMessage);
-            writeMessage("DEUS VULT! DEUS VULT! DEUS VULT! DEUS VULT!");
+            writeTextCommand(Command.PRIVMSG, "DEUS VULT! DEUS VULT! DEUS VULT! DEUS VULT!");
         }
 
         if (message.contains("begone bot")) {
             getChannel(serverMessage);
-            writeMessage("You don't have to be so mean about it. Goodbye :(");
+            writeTextCommand(Command.PRIVMSG, "You don't have to be so mean about it. Goodbye :(");
             quitServer();
         }
     }
