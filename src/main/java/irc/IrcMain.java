@@ -98,16 +98,7 @@ public class IrcMain {
                     //TODO: time command (timezones?)
                 }
 
-                // changes the bots nickname to the provided field
-                if (serverMessage.contains("!rename ")) {
-                    // extracts the new nickname from the server message
-                    String nameSegment = serverMessage.split("!rename ", 2)[1];
-                    nick = nameSegment.split(" ")[0];
-                    writeCommand(Command.NICK, nick);
-                }
-
                 // tells the bot to join the given channel
-                // TODO: check for double join (use channel array)
                 if (serverMessage.contains("!join ")) {
                     // extracts the channel to join from the server message
                     String channelSegment = serverMessage.split("!join ", 2)[1];
@@ -133,12 +124,21 @@ public class IrcMain {
                     }
                 }
 
+                // changes the bots nickname to the provided field
+                if (serverMessage.contains("!rename ")) {
+                    // extracts the new nickname from the server message
+                    String nameSegment = serverMessage.split("!rename ", 2)[1];
+                    nick = nameSegment.split(" ")[0];
+
+                    writeCommand(Command.NICK, nick);
+                }
+
                 // tells the bot to disconnect from the server
                 if (serverMessage.contains("!quit")) {
                     quitServer();
                 }
 
-                easterEggCheck(serverMessage);
+                easterEggs(serverMessage);
             }
 
             in.close();
@@ -207,7 +207,7 @@ public class IrcMain {
     // EASTER EGGS
     // =============================================================================
 
-    private static void easterEggCheck(String serverMessage) {
+    private static void easterEggs(String serverMessage) {
         String message = serverMessage.toLowerCase();
 
         if (message.contains("hello there")) {
