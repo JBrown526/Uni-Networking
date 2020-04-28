@@ -111,6 +111,11 @@ public class IrcMain {
         currentChannel = channelSegment.split(" ")[0];
     }
 
+    // formats the channel name for the server
+    private static String channelSignatureFormatter(String channel) {
+        return String.format("#%s", channel);
+    }
+
     // sends a command to the server
     private static void writeCommand(Command command, String message) {
         String fullMessage = String.format("%s %s\r%n", command.getLabel(), message);
@@ -161,7 +166,7 @@ public class IrcMain {
 
     // joins the given channel
     private static void joinChannel(String channel) {
-        String channelSignature = String.format("#%s", channel);
+        String channelSignature = channelSignatureFormatter(channel);
 
         // checks if the channel has already been joined
         if (channels.contains(channelSignature)) {
@@ -200,7 +205,7 @@ public class IrcMain {
 
     // leaves the given channel
     private static void leaveChannel(String channel) {
-        String channelSignature = String.format("#%s", channel);
+        String channelSignature = channelSignatureFormatter(channel);
 
         if (channels.contains(channelSignature)) {
             writeCommand(Command.PART, channelSignature);
