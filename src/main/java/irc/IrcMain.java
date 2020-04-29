@@ -22,6 +22,8 @@ public class IrcMain {
     private static ArrayList<String> channels;
     private static String currentChannel;
 
+    private static HigherOrLower higherOrLower;
+
     private static PrintWriter out;
 
     // enum containing implemented IRC commands
@@ -57,6 +59,8 @@ public class IrcMain {
         currentChannel = "ramblingbot";
         channels = new ArrayList<>();
 
+        higherOrLower = null;
+
         // opens a connection to the IRC server given in HOSTNAME
         try (Socket socket = new Socket(HOSTNAME, 6667)) {
 
@@ -81,12 +85,15 @@ public class IrcMain {
                     writeCommand(Command.PONG, pingContents);
                 }
 
-                // checks if a given command has been sent by the server
+                // checks if a command has been sent by the server
                 helpCommand(serverMessage);
                 joinCommand(serverMessage);
                 leaveCommand(serverMessage);
                 renameCommand(serverMessage);
                 setTopicCommand(serverMessage);
+                higherOrLowerCommand(serverMessage);
+                higherOrLowerGuess(serverMessage);
+                higherOrLowerStopCommand(serverMessage);
                 quitCommand(serverMessage);
 
                 easterEggs(serverMessage);
@@ -115,6 +122,12 @@ public class IrcMain {
     // formats the channel name for the server
     private static String channelSignatureFormatter(String channel) {
         return String.format("#%s", channel);
+    }
+
+    // extracts the user a message was sent from
+    private static String getUser(String serverMessage) {
+        String nameSegment = serverMessage.split("!~")[1];
+        return nameSegment.split("@")[0];
     }
 
     // sends a command to the server
@@ -146,9 +159,11 @@ public class IrcMain {
             writeTextCommand(Command.PRIVMSG, "!leave <channel> - this will remove me from a channel of your choosing, if no channel is given it will remove me from the current channel");
             writeTextCommand(Command.PRIVMSG, "!rename <newname> - this will rename me to whatever you choose, please be nice!");
             writeTextCommand(Command.PRIVMSG, "!settopic <topic> - this will change the channel's topic to your input");
-            writeTextCommand(Command.PRIVMSG, "!quit - this will kick me from the server");
-            //TODO: channel description command?
             //TODO: time command (timezones?)
+            writeTextCommand(Command.PRIVMSG, "!holstart - this will start a game of higher or lower! I can only run one game at a time so if another person is playing please wait your turn :)");
+            writeTextCommand(Command.PRIVMSG, "!holguess <number> - this will make a guess in a game of higher or lower if the current player enters a positive whole number");
+            writeTextCommand(Command.PRIVMSG, "!holstop - this can be used by the current player to stop a game of higher or lower prematurely");
+            writeTextCommand(Command.PRIVMSG, "!quit - this will kick me from the server");
         }
     }
 
@@ -227,7 +242,75 @@ public class IrcMain {
         }
     }
 
+    // starts a game of higher or lower
+    private static void higherOrLowerCommand(String serverMessage) {
+        if (serverMessage.contains("!holstart")) {
+            // checks a game isn't already ongoing
+            if (higherOrLower == null) {
+                getChannel(serverMessage);
+                String user = getUser(serverMessage);
+                higherOrLower = new HigherOrLower(currentChannel, user);
+                writeTextCommand(Command.PRIVMSG, "I'm thinking of a whole number between 1 and 100. Guess what it is!");
+            } else {
+                writeTextCommand(Command.PRIVMSG, String.format("%s is currently playing a game in #%s, please wait for them to finish or quit", higherOrLower.getPlayer(), higherOrLower.getChannel()));
+            }
+        }
+    }
+
+    // makes a guess in a game of higher or lower
+    private static void higherOrLowerGuess(String serverMessage) {
+        if (serverMessage.contains("!holguess ")) {
+            // checks a game is running
+            if (higherOrLower != null) {
+                getChannel(serverMessage);
+                String player = getUser(serverMessage);
+                String numString = serverMessage.split("!holguess ", 2)[1];
+
+                // ensures a valid number has been input
+                try {
+                    int guess = Integer.parseInt(numString);
+                    if (guess >= 1 && guess <= 100) {
+                        String guessResponse = higherOrLower.makeGuess(currentChannel, player, guess);
+                        writeTextCommand(Command.PRIVMSG, guessResponse);
+
+                        // ends the game if player makes a successful guess
+                        if (guessResponse.contains("Thanks for playing!")) {
+                            higherOrLower = null;
+                        }
+                    } else {
+                        writeTextCommand(Command.PRIVMSG, String.format("Guesses must be between 1 and 100, %d is not between 1 and 100, please guess again", guess));
+                    }
+                } catch (NumberFormatException nfe) {
+                    writeTextCommand(Command.PRIVMSG, String.format("%s is not a valid whole number format, please guess again", numString));
+                }
+            } else {
+                writeTextCommand(Command.PRIVMSG, "No game of higher or lower is being played");
+            }
+        }
+    }
+
+    // TODO: request associated nickname from server
+    // stops the currently running game of higher or lower
+    private static void higherOrLowerStopCommand(String serverMessage) {
+        if (serverMessage.contains("!holstop")) {
+            // checks a game is running
+            if (higherOrLower != null) {
+                // checks the player is the one wanting to stop the game
+                if (getUser(serverMessage).equals(higherOrLower.getPlayer())) {
+                    writeTextCommand(Command.PRIVMSG, String.format("%s has stopped their game of higher or lower", higherOrLower.getPlayer()));
+                    higherOrLower = null;
+                } else {
+                    writeTextCommand(Command.PRIVMSG, String.format("Only the current player, %s, can end their game", higherOrLower.getPlayer()));
+                }
+            } else {
+                writeTextCommand(Command.PRIVMSG, "No game of higher or lower is being played");
+            }
+        }
+    }
+
+    // tells the bot to update the channel topic
     private static void setTopicCommand(String serverMessage) {
+        // splits out the new topic
         if (serverMessage.contains("!settopic ")) {
             getChannel(serverMessage);
             String topicSegment = serverMessage.split("!settopic ", 2)[1];
