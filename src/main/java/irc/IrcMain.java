@@ -88,6 +88,7 @@ public class IrcMain {
                 }
 
                 // checks if a command has been sent by the server
+                //TODO: put getChannel() here instead of in each method
                 //TODO: make sure no text after command finished
                 helpCommand(serverMessage);
                 joinCommand(serverMessage);
@@ -355,26 +356,23 @@ public class IrcMain {
 
     private static void easterEggs(String serverMessage) {
         String message = serverMessage.toLowerCase();
+        getChannel(serverMessage);
 
         if (message.contains("hello there")) {
-            getChannel(serverMessage);
             writeTextCommand(Command.PRIVMSG, "General Kenobi! You are a bold one");
         }
 
         if (message.contains("crusade") || message.contains("crusading")) {
-            getChannel(serverMessage);
             writeTextCommand(Command.PRIVMSG, "DEUS VULT! DEUS VULT! DEUS VULT! DEUS VULT!");
         }
 
         if (message.contains("begone bot")) {
-            getChannel(serverMessage);
             writeTextCommand(Command.PRIVMSG, "You don't have to be so mean about it. Goodbye :(");
             quitServer();
         }
 
         if (message.contains(" i'm ") || message.contains(" im ")) {
-            getChannel(serverMessage);
-
+            // TODO: dad jokes
         }
     }
 }
