@@ -4,6 +4,8 @@ import java.util.Random;
 
 public class HigherOrLower {
 
+    // :selsey.nsqdc.city.ac.uk 391 RambleBot selsey.nsqdc.city.ac.uk :Wednesday April 29 2020 -- 20:14 BST
+
     private final String channel;
     private final String player;
     private final int number;

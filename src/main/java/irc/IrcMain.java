@@ -5,6 +5,8 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class IrcMain {
     //TODO: COMMENTS
@@ -22,6 +24,7 @@ public class IrcMain {
     private static ArrayList<String> channels;
     private static String currentChannel;
     private static boolean commandIssued;
+    private static boolean timeRequested;
 
     private static HigherOrLower higherOrLower;
 
@@ -36,6 +39,7 @@ public class IrcMain {
         QUIT("QUIT"),
         PING("PING"),
         PONG("PONG"),
+        TIME("TIME"),
         PRIVMSG("PRIVMSG"),
         TOPIC("TOPIC");
 
@@ -95,10 +99,15 @@ public class IrcMain {
                 leaveCommand(serverMessage);
                 renameCommand(serverMessage);
                 setTopicCommand(serverMessage);
+                timeCommand(serverMessage);
                 higherOrLowerCommand(serverMessage);
                 higherOrLowerGuess(serverMessage);
                 higherOrLowerStopCommand(serverMessage);
                 quitCommand(serverMessage);
+
+                if (timeRequested) {
+                    timeOutput(serverMessage);
+                }
 
                 if (!commandIssued) {
                     easterEggs(serverMessage);
@@ -137,6 +146,61 @@ public class IrcMain {
         return nameSegment.split("@")[0];
     }
 
+    private static boolean containsTime(String serverMessage) {
+        Pattern p = Pattern.compile(".*\\d{2}[ ]\\d{4}[ ]--[ ]\\d{2}[:]\\d{2}.*");
+        Matcher m = p.matcher(serverMessage);
+        return m.matches();
+    }
+
+    // Wednesday April 29 2020 -- 21:18 BST
+
+    private static String[] getTime(String serverMessage) {
+        String fullTimeSegment = serverMessage.split(" :", 2)[1];
+        String timeSegment = fullTimeSegment.replace("-- ", "");
+
+        // {day, month, date, year, time, region}
+        return timeSegment.split(" ");
+    }
+
+    private static void timeOutput(String serverMessage) {
+        if (containsTime(serverMessage)) {
+            String[] time = getTime(serverMessage);
+            writeTextCommand(Command.PRIVMSG, String.format("It is %s %s on %s the %s%s of %s %s", time[4], time[5], time[0], time[2], ordinalSuffix(Integer.parseInt(time[2])), time[1], time[3]));
+            timeRequested = false;
+        }
+    }
+
+    // determines the correct ordinal suffix for the day
+    private static String ordinalSuffix(int number) {
+        int tenRemainder = number % 10;
+        String suffix;
+
+        switch (tenRemainder) {
+            case 1:
+                suffix = "st";
+                break;
+            case 2:
+                suffix = "nd";
+                break;
+            case 3:
+                suffix = "rd";
+                break;
+            default:
+                suffix = "th";
+        }
+
+        // edge cases
+        switch (number) {
+            case 11:
+            case 12:
+            case 13:
+                suffix = "th";
+            default:
+        }
+
+        return suffix;
+    }
+
     // joins the given channel
     private static void joinChannel(String channel) {
         String channelSignature = channelSignatureFormatter(channel);
@@ -167,7 +231,7 @@ public class IrcMain {
 
     // disconnects from the server
     private static void quitServer() {
-        writeCommand(Command.QUIT, "");
+        writeCommand(Command.QUIT);
     }
 
     // sends a command to the server
@@ -178,12 +242,13 @@ public class IrcMain {
         out.flush();
     }
 
+    private static void writeCommand(Command command) {
+        writeCommand(command, "");
+    }
+
     // sends a message to the server on the current channel
     private static void writeTextCommand(Command command, String message) {
-        String fullMessage = String.format("%s #%s :%s\r%n", command.getLabel(), currentChannel, message);
-        System.out.printf(">>> %s%n", fullMessage);
-        out.print(fullMessage);
-        out.flush();
+        writeCommand(command, String.format("#%s :%s", currentChannel, message));
     }
 
     // =============================================================================
@@ -199,7 +264,7 @@ public class IrcMain {
             writeTextCommand(Command.PRIVMSG, "!leave <channel> - this will remove me from a channel of your choosing, if no channel is given it will remove me from the current channel");
             writeTextCommand(Command.PRIVMSG, "!rename <newname> - this will rename me to whatever you choose, please be nice!");
             writeTextCommand(Command.PRIVMSG, "!settopic <topic> - this will change the channel's topic to your input");
-            //TODO: time command (timezones?)
+            writeTextCommand(Command.PRIVMSG, "!time - this will return the current time on the server");
             writeTextCommand(Command.PRIVMSG, "!holstart - this will start a game of higher or lower! I can only run one game at a time so if another person is playing please wait your turn :)");
             writeTextCommand(Command.PRIVMSG, "!holguess <number> - this will make a guess in a game of higher or lower if the current player enters a positive whole number");
             writeTextCommand(Command.PRIVMSG, "!holstop - this can be used by the current player to stop a game of higher or lower prematurely");
@@ -255,6 +320,28 @@ public class IrcMain {
             nick = nameSegment.split(" ")[0];
 
             writeCommand(Command.NICK, nick);
+            commandIssued = true;
+        }
+    }
+
+    // tells the bot to update the channel topic
+    private static void setTopicCommand(String serverMessage) {
+        if (serverMessage.contains("!settopic ")) {
+            getChannel(serverMessage);
+
+            // splits out the new topic
+            String topicSegment = serverMessage.split("!settopic ", 2)[1];
+
+            writeTextCommand(Command.TOPIC, topicSegment);
+            commandIssued = true;
+        }
+    }
+
+    private static void timeCommand(String serverMessage) {
+        if (serverMessage.contains("!time")) {
+            getChannel(serverMessage);
+            writeCommand(Command.TIME);
+            timeRequested = true;
             commandIssued = true;
         }
     }
@@ -329,19 +416,6 @@ public class IrcMain {
         }
     }
 
-    // tells the bot to update the channel topic
-    private static void setTopicCommand(String serverMessage) {
-        if (serverMessage.contains("!settopic ")) {
-            getChannel(serverMessage);
-
-            // splits out the new topic
-            String topicSegment = serverMessage.split("!settopic ", 2)[1];
-
-            writeTextCommand(Command.TOPIC, topicSegment);
-            commandIssued = true;
-        }
-    }
-
     // tells the bot to disconnect from the server
     private static void quitCommand(String serverMessage) {
         if (serverMessage.contains("!quit")) {
@@ -356,22 +430,25 @@ public class IrcMain {
 
     private static void easterEggs(String serverMessage) {
         String message = serverMessage.toLowerCase();
-        getChannel(serverMessage);
 
         if (message.contains("hello there")) {
+            getChannel(serverMessage);
             writeTextCommand(Command.PRIVMSG, "General Kenobi! You are a bold one");
         }
 
         if (message.contains("crusade") || message.contains("crusading")) {
+            getChannel(serverMessage);
             writeTextCommand(Command.PRIVMSG, "DEUS VULT! DEUS VULT! DEUS VULT! DEUS VULT!");
         }
 
         if (message.contains("begone bot")) {
+            getChannel(serverMessage);
             writeTextCommand(Command.PRIVMSG, "You don't have to be so mean about it. Goodbye :(");
             quitServer();
         }
 
         if (message.contains(" i'm ") || message.contains(" im ")) {
+            getChannel(serverMessage);
             // TODO: dad jokes
         }
     }
