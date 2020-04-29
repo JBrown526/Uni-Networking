@@ -146,14 +146,14 @@ public class IrcMain {
         return nameSegment.split("@")[0];
     }
 
+    // checks if the message is returning a timestamp
     private static boolean containsTime(String serverMessage) {
         Pattern p = Pattern.compile(".*\\d{2}[ ]\\d{4}[ ]--[ ]\\d{2}[:]\\d{2}.*");
         Matcher m = p.matcher(serverMessage);
         return m.matches();
     }
 
-    // Wednesday April 29 2020 -- 21:18 BST
-
+    // extracts the time signature from the message
     private static String[] getTime(String serverMessage) {
         String fullTimeSegment = serverMessage.split(" :", 2)[1];
         String timeSegment = fullTimeSegment.replace("-- ", "");
@@ -162,7 +162,9 @@ public class IrcMain {
         return timeSegment.split(" ");
     }
 
+    // outputs the time to the server
     private static void timeOutput(String serverMessage) {
+        // checks if the server message contains a time code
         if (containsTime(serverMessage)) {
             String[] time = getTime(serverMessage);
             writeTextCommand(Command.PRIVMSG, String.format("It is %s %s on %s the %s%s of %s %s", time[4], time[5], time[0], time[2], ordinalSuffix(Integer.parseInt(time[2])), time[1], time[3]));
