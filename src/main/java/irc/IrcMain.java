@@ -21,6 +21,7 @@ public class IrcMain {
 
     private static ArrayList<String> channels;
     private static String currentChannel;
+    private static boolean commandIssued;
 
     private static HigherOrLower higherOrLower;
 
@@ -58,6 +59,7 @@ public class IrcMain {
         nick = "RambleBot";
         currentChannel = "ramblingbot";
         channels = new ArrayList<>();
+        commandIssued = false;
 
         higherOrLower = null;
 
@@ -96,7 +98,10 @@ public class IrcMain {
                 higherOrLowerStopCommand(serverMessage);
                 quitCommand(serverMessage);
 
-                easterEggs(serverMessage);
+                if (!commandIssued) {
+                    easterEggs(serverMessage);
+                }
+                commandIssued = false;
             }
 
             in.close();
@@ -128,6 +133,39 @@ public class IrcMain {
     private static String getUser(String serverMessage) {
         String nameSegment = serverMessage.split("!~")[1];
         return nameSegment.split("@")[0];
+    }
+
+    // joins the given channel
+    private static void joinChannel(String channel) {
+        String channelSignature = channelSignatureFormatter(channel);
+
+        // checks if the channel has already been joined
+        if (channels.contains(channelSignature)) {
+            writeTextCommand(Command.PRIVMSG, String.format("I'm already in %s!", channelSignature));
+        } else {
+            currentChannel = channel;
+            writeCommand(Command.JOIN, channelSignature);
+            channels.add(channelSignature);
+            writeTextCommand(Command.PRIVMSG, String.format("Hi! I'm %s, but you can call me %s. If you want to learn more about what I can do type \"!help\". Let's get along!", REAL_NAME, nick));
+        }
+    }
+
+    // leaves the given channel
+    private static void leaveChannel(String channel) {
+        String channelSignature = channelSignatureFormatter(channel);
+
+        // checks the bot is in the channel it's being asked to leave
+        if (channels.contains(channelSignature)) {
+            writeCommand(Command.PART, channelSignature);
+            channels.remove(channelSignature);
+        } else {
+            writeTextCommand(Command.PRIVMSG, String.format("I am not in %s", channelSignature));
+        }
+    }
+
+    // disconnects from the server
+    private static void quitServer() {
+        writeCommand(Command.QUIT, "");
     }
 
     // sends a command to the server
@@ -164,6 +202,7 @@ public class IrcMain {
             writeTextCommand(Command.PRIVMSG, "!holguess <number> - this will make a guess in a game of higher or lower if the current player enters a positive whole number");
             writeTextCommand(Command.PRIVMSG, "!holstop - this can be used by the current player to stop a game of higher or lower prematurely");
             writeTextCommand(Command.PRIVMSG, "!quit - this will kick me from the server");
+            commandIssued = true;
         }
     }
 
@@ -177,21 +216,7 @@ public class IrcMain {
 
             getChannel(serverMessage);
             joinChannel(channelName);
-        }
-    }
-
-    // joins the given channel
-    private static void joinChannel(String channel) {
-        String channelSignature = channelSignatureFormatter(channel);
-
-        // checks if the channel has already been joined
-        if (channels.contains(channelSignature)) {
-            writeTextCommand(Command.PRIVMSG, String.format("I'm already in %s!", channelSignature));
-        } else {
-            currentChannel = channel;
-            writeCommand(Command.JOIN, channelSignature);
-            channels.add(channelSignature);
-            writeTextCommand(Command.PRIVMSG, String.format("Hi! I'm %s, but you can call me %s. If you want to learn more about what I can do type \"!help\". Let's get along!", REAL_NAME, nick));
+            commandIssued = true;
         }
     }
 
@@ -216,18 +241,7 @@ public class IrcMain {
             if (channels.isEmpty()) {
                 quitServer();
             }
-        }
-    }
-
-    // leaves the given channel
-    private static void leaveChannel(String channel) {
-        String channelSignature = channelSignatureFormatter(channel);
-
-        if (channels.contains(channelSignature)) {
-            writeCommand(Command.PART, channelSignature);
-            channels.remove(channelSignature);
-        } else {
-            writeTextCommand(Command.PRIVMSG, String.format("I am not in %s", channelSignature));
+            commandIssued = true;
         }
     }
 
@@ -239,6 +253,7 @@ public class IrcMain {
             nick = nameSegment.split(" ")[0];
 
             writeCommand(Command.NICK, nick);
+            commandIssued = true;
         }
     }
 
@@ -250,10 +265,12 @@ public class IrcMain {
                 getChannel(serverMessage);
                 String user = getUser(serverMessage);
                 higherOrLower = new HigherOrLower(currentChannel, user);
+
                 writeTextCommand(Command.PRIVMSG, "I'm thinking of a whole number between 1 and 100. Guess what it is!");
             } else {
                 writeTextCommand(Command.PRIVMSG, String.format("%s is currently playing a game in #%s, please wait for them to finish or quit", higherOrLower.getPlayer(), higherOrLower.getChannel()));
             }
+            commandIssued = true;
         }
     }
 
@@ -269,6 +286,7 @@ public class IrcMain {
                 // ensures a valid number has been input
                 try {
                     int guess = Integer.parseInt(numString);
+
                     if (guess >= 1 && guess <= 100) {
                         String guessResponse = higherOrLower.makeGuess(currentChannel, player, guess);
                         writeTextCommand(Command.PRIVMSG, guessResponse);
@@ -286,10 +304,10 @@ public class IrcMain {
             } else {
                 writeTextCommand(Command.PRIVMSG, "No game of higher or lower is being played");
             }
+            commandIssued = true;
         }
     }
 
-    // TODO: request associated nickname from server
     // stops the currently running game of higher or lower
     private static void higherOrLowerStopCommand(String serverMessage) {
         if (serverMessage.contains("!holstop")) {
@@ -305,17 +323,20 @@ public class IrcMain {
             } else {
                 writeTextCommand(Command.PRIVMSG, "No game of higher or lower is being played");
             }
+            commandIssued = true;
         }
     }
 
     // tells the bot to update the channel topic
     private static void setTopicCommand(String serverMessage) {
-        // splits out the new topic
         if (serverMessage.contains("!settopic ")) {
             getChannel(serverMessage);
+
+            // splits out the new topic
             String topicSegment = serverMessage.split("!settopic ", 2)[1];
 
             writeTextCommand(Command.TOPIC, topicSegment);
+            commandIssued = true;
         }
     }
 
@@ -323,12 +344,8 @@ public class IrcMain {
     private static void quitCommand(String serverMessage) {
         if (serverMessage.contains("!quit")) {
             quitServer();
+            commandIssued = true;
         }
-    }
-
-    // disconnects from the server
-    private static void quitServer() {
-        writeCommand(Command.QUIT, "");
     }
 
     // =============================================================================
@@ -352,6 +369,11 @@ public class IrcMain {
             getChannel(serverMessage);
             writeTextCommand(Command.PRIVMSG, "You don't have to be so mean about it. Goodbye :(");
             quitServer();
+        }
+
+        if (message.contains(" i'm ") || message.contains(" im ")) {
+            getChannel(serverMessage);
+
         }
     }
 }

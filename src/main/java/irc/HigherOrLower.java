@@ -16,8 +16,6 @@ public class HigherOrLower {
 
         Random rand = new Random();
         number = rand.nextInt(100);
-        //TODO: remove this
-        System.out.println(number);
 
         guesses = 0;
     }
