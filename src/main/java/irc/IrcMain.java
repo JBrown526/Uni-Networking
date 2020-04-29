@@ -88,6 +88,7 @@ public class IrcMain {
                 }
 
                 // checks if a command has been sent by the server
+                //TODO: make sure no text after command finished
                 helpCommand(serverMessage);
                 joinCommand(serverMessage);
                 leaveCommand(serverMessage);
@@ -360,7 +361,7 @@ public class IrcMain {
             writeTextCommand(Command.PRIVMSG, "General Kenobi! You are a bold one");
         }
 
-        while (message.contains("crusade") || message.contains("crusading")) {
+        if (message.contains("crusade") || message.contains("crusading")) {
             getChannel(serverMessage);
             writeTextCommand(Command.PRIVMSG, "DEUS VULT! DEUS VULT! DEUS VULT! DEUS VULT!");
         }
