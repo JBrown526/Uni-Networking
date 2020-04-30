@@ -9,13 +9,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class IrcMain {
-    //TODO: COMMENTS
 
     // =============================================================================
     // FIELDS
     // =============================================================================
 
-    // TODO: set these at runtime through commandline inputs
     private static final String HOSTNAME = "selsey.nsqdc.city.ac.uk";
     private static final String USER_NAME = "RamblingBot";
     private static final String REAL_NAME = "The Rambling Bot";
