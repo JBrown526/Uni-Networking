@@ -100,6 +100,7 @@ public class IrcMain {
                 renameCommand(serverMessage);
                 setTopicCommand(serverMessage);
                 timeCommand(serverMessage);
+                storyCommand(serverMessage);
                 higherOrLowerCommand(serverMessage);
                 higherOrLowerGuess(serverMessage);
                 higherOrLowerStopCommand(serverMessage);
@@ -267,6 +268,7 @@ public class IrcMain {
             writeTextCommand(Command.PRIVMSG, "!rename <newname> - this will rename me to whatever you choose, please be nice!");
             writeTextCommand(Command.PRIVMSG, "!settopic <topic> - this will change the channel's topic to your input");
             writeTextCommand(Command.PRIVMSG, "!time - this will return the current time on the server");
+            writeTextCommand(Command.PRIVMSG, "!story - this will make me generate a short story idea");
             writeTextCommand(Command.PRIVMSG, "!holstart - this will start a game of higher or lower! I can only run one game at a time so if another person is playing please wait your turn :)");
             writeTextCommand(Command.PRIVMSG, "!holguess <number> - this will make a guess in a game of higher or lower if the current player enters a positive whole number");
             writeTextCommand(Command.PRIVMSG, "!holstop - this can be used by the current player to stop a game of higher or lower prematurely");
@@ -345,6 +347,13 @@ public class IrcMain {
             writeCommand(Command.TIME);
             timeRequested = true;
             commandIssued = true;
+        }
+    }
+
+    private static void storyCommand(String serverMessage) {
+        if (serverMessage.contains("!story")) {
+            getChannel(serverMessage);
+            writeTextCommand(Command.PRIVMSG, new RandomStoryGen().getStory());
         }
     }
 
