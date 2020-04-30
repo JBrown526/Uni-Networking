@@ -26,6 +26,7 @@ public class IrcMain {
     private static boolean commandIssued;
     private static boolean timeRequested;
 
+    private static final RandomStoryGen randomStoryGen = new RandomStoryGen();
     private static HigherOrLower higherOrLower;
 
     private static PrintWriter out;
@@ -353,7 +354,7 @@ public class IrcMain {
     private static void storyCommand(String serverMessage) {
         if (serverMessage.contains("!story")) {
             getChannel(serverMessage);
-            writeTextCommand(Command.PRIVMSG, new RandomStoryGen().getStory());
+            writeTextCommand(Command.PRIVMSG, randomStoryGen.makeStory());
         }
     }
 

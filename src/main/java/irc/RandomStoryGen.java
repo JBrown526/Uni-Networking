@@ -46,11 +46,10 @@ public class RandomStoryGen {
             "Soldier", "Alchemist", "Warlock", "Archer", "Musketeer", "Lumberjack", "Mercenary", "Cook", "Gardener"};
     private final Random rand = new Random();
 
-    private String story;
-
-    public RandomStoryGen() {
+    public String makeStory() {
         CharacterGender gender = randomiseGender();
         QuestType quest = randomiseQuestType();
+        String story;
         String characterSegment;
         String questSegment;
 
@@ -79,9 +78,6 @@ public class RandomStoryGen {
 
         story = String.format("Our story begins with %s on their journey to %s", characterSegment, questSegment);
         story = changeMacguffin(story);
-    }
-
-    public String getStory() {
         return story;
     }
 
