@@ -59,7 +59,6 @@ public class IrcMain {
     // MAIN
     // =============================================================================
 
-    // TODO: Refactor into methods/class
     public static void main(String[] args) {
         nick = "RambleBot";
         currentChannel = "ramblingbot";
@@ -93,8 +92,6 @@ public class IrcMain {
                 }
 
                 // checks if a command has been sent by the server
-                //TODO: put getChannel() here instead of in each method
-                //TODO: make sure no text after command finished
                 helpCommand(serverMessage);
                 joinCommand(serverMessage);
                 leaveCommand(serverMessage);
@@ -246,11 +243,12 @@ public class IrcMain {
         out.flush();
     }
 
+    // sends a command to the server with no attached text
     private static void writeCommand(Command command) {
         writeCommand(command, "");
     }
 
-    // sends a message to the server on the current channel
+    // sends a command to the server on the current channel
     private static void writeTextCommand(Command command, String message) {
         writeCommand(command, String.format("#%s :%s", currentChannel, message));
     }
@@ -342,6 +340,7 @@ public class IrcMain {
         }
     }
 
+    // asks the bot for the time
     private static void timeCommand(String serverMessage) {
         if (serverMessage.contains("!time")) {
             getChannel(serverMessage);
@@ -351,10 +350,12 @@ public class IrcMain {
         }
     }
 
+    // tells the bot to generate a short story synopsis
     private static void storyCommand(String serverMessage) {
         if (serverMessage.contains("!story")) {
             getChannel(serverMessage);
             writeTextCommand(Command.PRIVMSG, randomStoryGen.makeStory());
+            commandIssued = true;
         }
     }
 
