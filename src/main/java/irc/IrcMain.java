@@ -15,7 +15,6 @@ public class IrcMain {
     // FIELDS
     // =============================================================================
 
-    // TODO: set at runtime
     private static final String DEFAULT_HOSTNAME = "selsey.nsqdc.city.ac.uk";
     private static final int DEFAULT_PORT = 6667;
     private static final String DEFAULT_USERNAME = "RamblingBot";
