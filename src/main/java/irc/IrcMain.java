@@ -1,6 +1,7 @@
 package irc;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -14,9 +15,14 @@ public class IrcMain {
     // FIELDS
     // =============================================================================
 
-    private static final String HOSTNAME = "selsey.nsqdc.city.ac.uk";
-    private static final String USER_NAME = "RamblingBot";
-    private static final String REAL_NAME = "The Rambling Bot";
+    // TODO: set at runtime
+    private static final String DEFAULT_HOSTNAME = "selsey.nsqdc.city.ac.uk";
+    private static final int DEFAULT_PORT = 6667;
+    private static final String DEFAULT_USERNAME = "RamblingBot";
+    private static final String DEFAULT_REAL_NAME = "The Rambling Bot";
+    private static final String DEFAULT_NICKNAME = "RambleBot";
+    private static final String DEFAULT_CHANNEL = "ramblingbot";
+
     private static String nick;
 
     private static ArrayList<String> channels;
@@ -58,15 +64,62 @@ public class IrcMain {
     // =============================================================================
 
     public static void main(String[] args) {
-        nick = "RambleBot";
-        currentChannel = "ramblingbot";
+        String hostname;
+        int port;
+        String username;
+        String realName;
+
+        Scanner sysIn = new Scanner(new InputStreamReader(System.in));
+
+        // option to skip manual entry of connection parameters
+        System.out.println("would you like to connect with the default settings? (Y/N)");
+        String input = sysIn.nextLine();
+        if (input.contains("Y")) {
+            hostname = DEFAULT_HOSTNAME;
+            port = DEFAULT_PORT;
+            username = DEFAULT_USERNAME;
+            realName = DEFAULT_USERNAME;
+            nick = DEFAULT_NICKNAME;
+            currentChannel = DEFAULT_CHANNEL;
+        } else {
+            // manual entry for hostname
+            System.out.printf("please enter the host you would like to connect to and then press enter (if left blank this will default to %s):%n", DEFAULT_HOSTNAME);
+            input = sysIn.nextLine();
+            hostname = input.equals("") ? DEFAULT_HOSTNAME : input;
+
+            // manual entry for port
+            System.out.printf("please enter the port you would like to connect on and then press enter (if left blank this will default to %d):%n", DEFAULT_PORT);
+            input = sysIn.nextLine();
+            port = input.equals("") ? DEFAULT_PORT : Integer.parseInt(input);
+
+            // manual entry for username
+            System.out.printf("please enter the username you would like to use and then press enter (if left blank this will default to %s):%n", DEFAULT_USERNAME);
+            input = sysIn.nextLine();
+            username = input.equals("") ? DEFAULT_USERNAME : input;
+
+            // manual entry for real name
+            System.out.printf("please enter the real name you would like to use and then press enter (if left blank this will default to %s):%n", DEFAULT_REAL_NAME);
+            input = sysIn.nextLine();
+            realName = input.equals("") ? DEFAULT_REAL_NAME : input;
+
+            // manual entry for nickname
+            System.out.printf("please enter the nickname you would like to use and then press enter (if left blank this will default to %s):%n", DEFAULT_NICKNAME);
+            input = sysIn.nextLine();
+            nick = input.equals("") ? DEFAULT_NICKNAME : input;
+
+            // manual entry for channel
+            System.out.printf("please enter the first channel you would like to join and then press enter (if left blank this will default to %s):%n", DEFAULT_CHANNEL);
+            input = sysIn.nextLine();
+            currentChannel = input.equals("") ? DEFAULT_CHANNEL : input;
+        }
+
         channels = new ArrayList<>();
         commandIssued = false;
 
         higherOrLower = null;
 
         // opens a connection to the IRC server given in HOSTNAME
-        try (Socket socket = new Socket(HOSTNAME, 6667)) {
+        try (Socket socket = new Socket(hostname, port)) {
 
             // gets the input and output streams of the socket
             out = new PrintWriter(socket.getOutputStream(), true);
@@ -74,7 +127,7 @@ public class IrcMain {
 
             // provides credentials for the IRC server and joins the default channel
             writeCommand(Command.NICK, nick);
-            writeCommand(Command.USER, String.format("%s ) * :%s", USER_NAME, REAL_NAME));
+            writeCommand(Command.USER, String.format("%s ) * :%s", username, realName));
             joinChannel(currentChannel);
 
             // loops through the responses received from the input stream
@@ -212,7 +265,7 @@ public class IrcMain {
             currentChannel = channel;
             writeCommand(Command.JOIN, channelSignature);
             channels.add(channelSignature);
-            writeTextCommand(Command.PRIVMSG, String.format("Hi! I'm %s, but you can call me %s. If you want to learn more about what I can do type \"!help\". Let's get along!", REAL_NAME, nick));
+            writeTextCommand(Command.PRIVMSG, String.format("Hi! I'm %s, but you can call me %s. If you want to learn more about what I can do type \"!help\". Let's get along!", DEFAULT_REAL_NAME, nick));
         }
     }
 
