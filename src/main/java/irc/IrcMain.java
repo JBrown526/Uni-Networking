@@ -454,6 +454,7 @@ public class IrcMain {
 
     private static void easterEggs(String serverMessage) {
         String message = serverMessage.toLowerCase();
+        String dadJokeFormat = "Hi %s! I'm %s";
 
         if (message.contains("hello there")) {
             getChannel(serverMessage);
@@ -475,22 +476,22 @@ public class IrcMain {
             getChannel(serverMessage);
             String objectSegment = message.split(" i'm ")[1];
             String object = objectSegment.split(" ", 2)[0];
-            writeTextCommand(Command.PRIVMSG, String.format("Hi %s! I'm %s", object, nick));
+            writeTextCommand(Command.PRIVMSG, String.format(dadJokeFormat, object, nick));
         } else if (message.contains(":i'm ")) {
             getChannel(serverMessage);
             String objectSegment = message.split(":i'm ")[1];
             String object = objectSegment.split(" ", 2)[0];
-            writeTextCommand(Command.PRIVMSG, String.format("Hi %s! I'm %s", object, nick));
+            writeTextCommand(Command.PRIVMSG, String.format(dadJokeFormat, object, nick));
         } else if (message.contains(" im ")) {
             getChannel(serverMessage);
             String objectSegment = message.split(" im ")[1];
             String object = objectSegment.split(" ", 2)[0];
-            writeTextCommand(Command.PRIVMSG, String.format("Hi %s! I'm %s", object, nick));
+            writeTextCommand(Command.PRIVMSG, String.format(dadJokeFormat, object, nick));
         } else if (message.contains(":im ")) {
             getChannel(serverMessage);
             String objectSegment = message.split(":im ")[1];
             String object = objectSegment.split(" ", 2)[0];
-            writeTextCommand(Command.PRIVMSG, String.format("Hi %s! I'm %s", object, nick));
+            writeTextCommand(Command.PRIVMSG, String.format(dadJokeFormat, object, nick));
         }
     }
 }
