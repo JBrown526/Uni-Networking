@@ -361,6 +361,7 @@ public class IrcMain {
         }
     }
 
+    // tells the bot to generate a tragic backstory
     private static void backstoryCommand(String serverMessage) {
         if (serverMessage.contains("!backstory")) {
             getChannel(serverMessage);
@@ -470,9 +471,26 @@ public class IrcMain {
             quitServer();
         }
 
-        if (message.contains(" i'm ") || message.contains(" im ")) {
+        if (message.contains(" i'm ")) {
             getChannel(serverMessage);
-            // TODO: dad jokes
+            String objectSegment = message.split(" i'm ")[1];
+            String object = objectSegment.split(" ", 2)[0];
+            writeTextCommand(Command.PRIVMSG, String.format("Hi %s! I'm %s", object, nick));
+        } else if (message.contains(":i'm ")) {
+            getChannel(serverMessage);
+            String objectSegment = message.split(":i'm ")[1];
+            String object = objectSegment.split(" ", 2)[0];
+            writeTextCommand(Command.PRIVMSG, String.format("Hi %s! I'm %s", object, nick));
+        } else if (message.contains(" im ")) {
+            getChannel(serverMessage);
+            String objectSegment = message.split(" im ")[1];
+            String object = objectSegment.split(" ", 2)[0];
+            writeTextCommand(Command.PRIVMSG, String.format("Hi %s! I'm %s", object, nick));
+        } else if (message.contains(":im ")) {
+            getChannel(serverMessage);
+            String objectSegment = message.split(":im ")[1];
+            String object = objectSegment.split(" ", 2)[0];
+            writeTextCommand(Command.PRIVMSG, String.format("Hi %s! I'm %s", object, nick));
         }
     }
 }
