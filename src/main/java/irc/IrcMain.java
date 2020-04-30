@@ -142,6 +142,7 @@ public class IrcMain {
                 }
 
                 // checks if a command has been sent by the server
+                //TODO: Dice roll command
                 helpCommand(serverMessage);
                 joinCommand(serverMessage);
                 leaveCommand(serverMessage);
