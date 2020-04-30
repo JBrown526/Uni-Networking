@@ -100,6 +100,7 @@ public class RandomStoryGen {
         return story;
     }
 
+    // generates a tragic backstory
     public String makeTragicBackstory() {
         CharacterGender characterGender = randomiseGender();
         CharacterGender villainGender = randomiseGender();
@@ -109,16 +110,21 @@ public class RandomStoryGen {
         String characterSegment;
         String villainSegment;
 
+        // selects a random name for the main depending on their gender
         characterSegment = (characterGender == CharacterGender.MALE) ? getRandom(maleNames) : getRandom(femaleNames);
         characterSegment = String.format("%s %s", characterSegment, getRandom(surnames));
 
+        // populates random details for a villain
         if (villainGender == CharacterGender.MALE) {
+            // random details for a male villain
             villainSegment = String.format("%s %s", getRandom(maleTitles), getRandom(maleNames));
         } else {
+            // random details for a female villain
             villainSegment = String.format("%s %s", getRandom(femaleTitles), getRandom(femaleNames));
         }
         villainSegment = String.format("%s %s of %s", villainSegment, getRandom(surnames), getRandom(places));
 
+        // finalises the backstory
         story = String.format("At the tender age of %d, %s was ripped from their comfortable life when %s...", age, characterSegment, getRandom(tragicBackstory));
         story = insertDastardlyVillain(story, villainSegment);
         return story;
