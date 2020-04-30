@@ -28,7 +28,7 @@ public class RandomStoryGen {
             "Fletcher", "Flynn", "Stark", "Dashwood", "O'Hara", "Trask", "Jones", "Hamilton", "Price", "Kent", "Bond"};
     private final String[] places = {"Hogwarts", "The Emerald City", "Metropolis", "Asgard", "The Shire", "Rivendell",
             "Elfinwood", "Pantora", "Kanto", "Sinnoh", "Dragonstone", "Rylath", "Ithoria", "Aeos", "Chandrilla", "Illandia",
-            "Iridonia", "Griffonia", "Mimbana", "Pandora", "Hadfield", "The lonely Mountain", "Mount Ruen", "Castle Blackfrost"};
+            "Iridonia", "Griffonia", "Mimbana", "Pandora", "Hadfield", "The lonely Mountain", "Mount Doom", "Castle Blackfrost"};
     private final String[] quests = {"overthrow The Empire", "seek the macguffin", "slay the dragon", "steal from the rich to give to the poor",
             "hide the macguffin", "destroy the macguffin", "steal the macguffin"};
     private final String[] multiMaleQuests = {"rescue", "elope with their husband", "guard", "extort", "blackmail",
@@ -39,20 +39,27 @@ public class RandomStoryGen {
             "Infinity Stones", "Book of the Dead", "Briefcase", "Ark of the Covenant", "Rogue Construct", "Secret Plans",
             "Egg", "Suitcase", "Sacred Texts", "Cursed Chalice", "Magic Staff"};
     private final String[] maleTitles = {"King", "Prince", "Sir", "Archmage", "Lord", "Mayor", "General", "Admiral",
-            "Captain", "Archpriest", "Minister", "Cardinal", "Chief", "Director", "Patriarch", "Professor", "Chairman"};
+            "Captain", "Archpriest", "Minister", "Cardinal", "Chief", "Director", "Patriarch", "Professor", "Chairman",
+            "Chancellor", "Marquis", "Count", "Earl", "Duke", "Baron", "Viscount"};
     private final String[] femaleTitles = {"Queen", "Princess", "Dame", "Archmage", "Lady", "Mayor", "General", "Admiral",
-            "Captain", "Archpriest", "Minister", "Cardinal", "Chief", "Director", "Matriarch", "Professor", "Chairman"};
+            "Captain", "Archpriest", "Minister", "Cardinal", "Chief", "Director", "Matriarch", "Professor", "Chairman",
+            "Chancellor", "Marquess", "Countess", "Duchess", "Baroness", "Viscountess"};
     private final String[] maleJobs = {"Nurse", "Knight", "Blacksmith", "Mage", "Wizard", "Doctor", "Hunter", "Rogue",
             "Thief", "Warrior", "Ogre", "Fisherman", "Butcher", "Carpenter", "Chef", "Priest", "Monk", "Detective",
             "Soldier", "Alchemist", "Warlock", "Archer", "Musketeer", "Lumberjack", "Mercenary", "Cook", "Gardener"};
     private final String[] femaleJobs = {"Nurse", "Knight", "Blacksmith", "Mage", "Witch", "Doctor", "Hunter", "Rogue",
             "Thief", "Warrior", "Ogre", "Fisherman", "Butcher", "Carpenter", "Chef", "Priestess", "Nun", "Detective",
             "Soldier", "Alchemist", "Warlock", "Archer", "Musketeer", "Lumberjack", "Mercenary", "Cook", "Gardener"};
+    private final String[] tragicBackstory = {"villain raped and pillaged their way through their village",
+            "a dragon burnt down their home", "villain abducted them for evil science experiments", "their best friend called them smelly",
+            "villain killed their parents but failed to kill them due to a prophecy", "they were sold into slavery to villain",
+            "villain tricked them into doing something dangerous, leaving them hideously deformed", "they contracted a rare and untreatable disease"};
 
     // generates a short story synopsis
     public String makeStory() {
         CharacterGender gender = randomiseGender();
         QuestType quest = randomiseQuestType();
+
         String story;
         String characterSegment;
         String questSegment;
@@ -89,7 +96,31 @@ public class RandomStoryGen {
 
         // finalises the story
         story = String.format("Our story begins with %s on their journey to %s...", characterSegment, questSegment);
-        story = changeMacguffin(story);
+        story = insertMacguffin(story);
+        return story;
+    }
+
+    public String makeTragicBackstory() {
+        CharacterGender characterGender = randomiseGender();
+        CharacterGender villainGender = randomiseGender();
+        int age = randomChildAge();
+
+        String story;
+        String characterSegment;
+        String villainSegment;
+
+        characterSegment = (characterGender == CharacterGender.MALE) ? getRandom(maleNames) : getRandom(femaleNames);
+        characterSegment = String.format("%s %s", characterSegment, getRandom(surnames));
+
+        if (villainGender == CharacterGender.MALE) {
+            villainSegment = String.format("%s %s", getRandom(maleTitles), getRandom(maleNames));
+        } else {
+            villainSegment = String.format("%s %s", getRandom(femaleTitles), getRandom(femaleNames));
+        }
+        villainSegment = String.format("%s %s of %s", villainSegment, getRandom(surnames), getRandom(places));
+
+        story = String.format("At the tender age of %d, %s was ripped from their comfortable life when %s...", age, characterSegment, getRandom(tragicBackstory));
+        story = insertDastardlyVillain(story, villainSegment);
         return story;
     }
 
@@ -112,8 +143,17 @@ public class RandomStoryGen {
         return strings[selected];
     }
 
+    private int randomChildAge() {
+        return rand.nextInt(14) + 1;
+    }
+
     // chooses a random macguffin for the story
-    private String changeMacguffin(String story) {
+    private String insertMacguffin(String story) {
         return story.replace("macguffin", getRandom(macguffins));
+    }
+
+    // inserts the villains details
+    private String insertDastardlyVillain(String story, String villain) {
+        return story.replace("villain", villain);
     }
 }
