@@ -47,7 +47,7 @@ public class IrcMain {
         PRIVMSG("PRIVMSG"),
         TOPIC("TOPIC");
 
-        public final String label;
+        private final String label;
 
         Command(String label) {
             this.label = label;
@@ -73,7 +73,7 @@ public class IrcMain {
         // option to skip manual entry of connection parameters
         System.out.println("would you like to connect with the default settings? (Y/N)");
         String input = sysIn.nextLine();
-        if (input.contains("Y")) {
+        if (input.contains("Y") || input.contains("y")) {
             hostname = DEFAULT_HOSTNAME;
             port = DEFAULT_PORT;
             username = DEFAULT_USERNAME;
