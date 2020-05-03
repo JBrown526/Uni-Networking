@@ -11,10 +11,11 @@ import java.util.regex.Pattern;
 
 public class IrcMain {
 
-    // =============================================================================
+    // =================================================================================================================
     // FIELDS
-    // =============================================================================
+    // =================================================================================================================
 
+    // default connection details
     private static final String DEFAULT_HOSTNAME = "selsey.nsqdc.city.ac.uk";
     private static final int DEFAULT_PORT = 6667;
     private static final String DEFAULT_USERNAME = "RamblingBot";
@@ -26,7 +27,10 @@ public class IrcMain {
 
     private static ArrayList<String> channels;
     private static String currentChannel;
+
+    // flag to prevent easter eggs if a command has been issued
     private static boolean commandIssued;
+    // flag to tell the bot to listen for a time message from the server
     private static boolean timeRequested;
 
     private static final RandomStoryGen randomStoryGen = new RandomStoryGen();
@@ -58,9 +62,9 @@ public class IrcMain {
         }
     }
 
-    // =============================================================================
+    // =================================================================================================================
     // MAIN
-    // =============================================================================
+    // =================================================================================================================
 
     public static void main(String[] args) {
         String hostname;
@@ -117,14 +121,14 @@ public class IrcMain {
 
         higherOrLower = null;
 
-        // opens a connection to the IRC server given in HOSTNAME
+        // opens a connection to the IRC server in hostname
         try (Socket socket = new Socket(hostname, port)) {
 
             // gets the input and output streams of the socket
             out = new PrintWriter(socket.getOutputStream(), true);
             Scanner in = new Scanner(socket.getInputStream());
 
-            // provides credentials for the IRC server and joins the default channel
+            // provides credentials for the IRC server and joins the requested channel
             writeCommand(Command.NICK, nick);
             writeCommand(Command.USER, String.format("%s ) * :%s", username, realName));
             joinChannel(currentChannel);
@@ -139,6 +143,7 @@ public class IrcMain {
                 if (serverMessage.startsWith(Command.PING.getLabel())) {
                     String pingContents = serverMessage.split(" ", 2)[1];
                     writeCommand(Command.PONG, pingContents);
+                    commandIssued = true;
                 }
 
                 // checks if a command has been sent by the server
@@ -155,13 +160,16 @@ public class IrcMain {
                 higherOrLowerStopCommand(serverMessage);
                 quitCommand(serverMessage);
 
+                // checks if waiting for a time message from the server
                 if (timeRequested) {
                     timeOutput(serverMessage);
                 }
 
+                // only allows easter eggs/jokes if no command has been issued
                 if (!commandIssued) {
                     easterEggs(serverMessage);
                 }
+
                 commandIssued = false;
             }
 
@@ -175,9 +183,9 @@ public class IrcMain {
         }
     }
 
-    // =============================================================================
+    // =================================================================================================================
     // UTILITY METHODS
-    // =============================================================================
+    // =================================================================================================================
 
     // extracts the channel a message was sent from
     private static void getChannel(String serverMessage) {
@@ -227,6 +235,7 @@ public class IrcMain {
         int tenRemainder = number % 10;
         String suffix;
 
+        // gives the appropriate ordinal suffix
         switch (tenRemainder) {
             case 1:
                 suffix = "st";
@@ -241,7 +250,7 @@ public class IrcMain {
                 suffix = "th";
         }
 
-        // edge cases
+        // edge cases for 11, 12 and 13
         switch (number) {
             case 11:
             case 12:
@@ -261,6 +270,7 @@ public class IrcMain {
         if (channels.contains(channelSignature)) {
             writeTextCommand(Command.PRIVMSG, String.format("I'm already in %s!", channelSignature));
         } else {
+            // joins channel and posts greeting message
             currentChannel = channel;
             writeCommand(Command.JOIN, channelSignature);
             channels.add(channelSignature);
@@ -299,14 +309,14 @@ public class IrcMain {
         writeCommand(command, "");
     }
 
-    // sends a command to the server on the current channel
+    // sends a command to the server for a specific channel
     private static void writeTextCommand(Command command, String message) {
         writeCommand(command, String.format("#%s :%s", currentChannel, message));
     }
 
-    // =============================================================================
+    // =================================================================================================================
     // COMMAND METHODS
-    // =============================================================================
+    // =================================================================================================================
 
     // lists all the available commands
     private static void helpCommand(String serverMessage) {
@@ -498,9 +508,9 @@ public class IrcMain {
         }
     }
 
-    // =============================================================================
+    // =================================================================================================================
     // EASTER EGGS
-    // =============================================================================
+    // =================================================================================================================
 
     private static void easterEggs(String serverMessage) {
         String message = serverMessage.toLowerCase();

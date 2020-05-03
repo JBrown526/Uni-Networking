@@ -4,20 +4,41 @@ import java.util.Random;
 
 public class HigherOrLower {
 
+    // =================================================================================================================
+    // FIELDS
+    // =================================================================================================================
+
     private final String channel;
     private final String player;
     private final int number;
 
     private int guesses;
 
+    // =================================================================================================================
+    // CONSTRUCTOR
+    // =================================================================================================================
+
     public HigherOrLower(String channel, String player) {
         this.channel = channel;
         this.player = player;
 
+        // sets number to be guessed
         Random rand = new Random();
         number = rand.nextInt(100);
 
         guesses = 0;
+    }
+
+    // =================================================================================================================
+    // METHODS
+    // =================================================================================================================
+
+    public String getPlayer() {
+        return player;
+    }
+
+    public String getChannel() {
+        return channel;
     }
 
     // processes a guess made by a player
@@ -42,13 +63,5 @@ public class HigherOrLower {
         }
         // if the player has made a correct guess
         return String.format("Correct! It took you %d to get it right. Thanks for playing!", guesses);
-    }
-
-    public String getPlayer() {
-        return player;
-    }
-
-    public String getChannel() {
-        return channel;
     }
 }
